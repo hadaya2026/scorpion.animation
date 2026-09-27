@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+  <meta charset="UTF-8">
+  <title>Scorpion Cursor Animation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #000000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+
+window.addEventListener('mousemove', (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+class Segment {
+  constructor(x, y, len) {
+    this.x = x;
+    this.y = y;
+    this.len = len;
+    this.angle = 0;
+  }
+
+  follow(targetX, targetY) {
+    let dx = targetX - this.x;
+    let dy = targetY - this.y;
+    this.angle = Math.atan2(dy, dx);
+    this.x = targetX - Math.cos(this.angle) * this.len;
+    this.y = targetY - Math.sin(this.angle) * this.len;
+  }
+}
+
+class Scorpion {
+  constructor(x, y) {
+    this.numSegments = 28;
+    this.segmentLength = 10;
+    this.segments = [];
+
+    for (let i = 0; i < this.numSegments; i++) {
+      this.segments.push(new Segment(x, y, this.segmentLength));
+    }
+  }
+
+  update(targetX, targetY) {
+    this.segments[0].follow(targetX, targetY);
+    for (let i = 1; i < this.segments.length; i++) {
+      this.segments[i].follow(this.segments[i - 1].x, this.segments[i - 1].y);
+    }
+  }
+
+  draw(ctx) {
+    // 1. Sawirida Cidiyaha Hore (Claws / Pincers)
+    let head = this.segments[0];
+    let headAngle = head.angle;
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+
+    // Ciddida Midig
+    let clawR1X = head.x + Math.cos(headAngle + 0.6) * 25;
+    let clawR1Y = head.y + Math.sin(headAngle + 0.6) * 25;
+    let clawR2X = clawR1X + Math.cos(headAngle - 0.2) * 18;
+    let clawR2Y = clawR1Y + Math.sin(headAngle - 0.2) * 18;
+
+    ctx.beginPath();
+    ctx.moveTo(head.x, head.y);
+    ctx.lineTo(clawR1X, clawR1Y);
+    ctx.lineTo(clawR2X, clawR2Y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(clawR2X, clawR2Y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Ciddida Bidix
+    let clawL1X = head.x + Math.cos(headAngle - 0.6) * 25;
+    let clawL1Y = head.y + Math.sin(headAngle - 0.6) * 25;
+    let clawL2X = clawL1X + Math.cos(headAngle + 0.2) * 18;
+    let clawL2Y = clawL1Y + Math.sin(headAngle + 0.2) * 18;
+
+    ctx.beginPath();
+    ctx.moveTo(head.x, head.y);
+    ctx.lineTo(clawL1X, clawL1Y);
+    ctx.lineTo(clawL2X, clawL2Y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(clawL2X, clawL2Y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Sawirida Dhabarka / Lafaha (Spine & Ribs)
+    ctx.beginPath();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < this.segments.length; i++) {
+      ctx.lineTo(this.segments[i].x, this.segments[i].y);
+    }
+    ctx.stroke();
+
+    // 3. Sawirida Lugaha iyo Lafaha Garabka
+    for (let i = 2; i < 16; i += 2) {
+      let seg = this.segments[i];
+      let perpAngle = seg.angle + Math.PI / 2;
+      let width = 18 - (i * 0.6);
+
+      // Lugaha Midig
+      let rx1 = seg.x + Math.cos(perpAngle) * width;
+      let ry1 = seg.y + Math.sin(perpAngle) * width;
+      let rx2 = rx1 + Math.cos(perpAngle + 0.8) * 15;
+      let ry2 = ry1 + Math.sin(perpAngle + 0.8) * 15;
+
+      ctx.beginPath();
+      ctx.moveTo(seg.x, seg.y);
+      ctx.lineTo(rx1, ry1);
+      ctx.lineTo(rx2, ry2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(rx2, ry2, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Lugaha Bidix
+      let lx1 = seg.x - Math.cos(perpAngle) * width;
+      let ly1 = seg.y - Math.sin(perpAngle) * width;
+      let lx2 = lx1 - Math.cos(perpAngle - 0.8) * 15;
+      let ly2 = ly1 - Math.sin(perpAngle - 0.8) * 15;
+
+      ctx.beginPath();
+      ctx.moveTo(seg.x, seg.y);
+      ctx.lineTo(lx1, ly1);
+      ctx.lineTo(lx2, ly2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(lx2, ry2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Burooyinka ku yaal Dhabarka (Joint Nodes)
+    for (let i = 0; i < this.segments.length; i++) {
+      ctx.beginPath();
+      let r = i === 0 ? 4 : (i < 16 ? 3 : 1.5);
+      ctx.arc(this.segments[i].x, this.segments[i].y, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+  }
+}
+
+const scorpion = new Scorpion(mouse.x, mouse.y);
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  scorpion.update(mouse.x, mouse.y);
+  scorpion.draw(ctx);
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
